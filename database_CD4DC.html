@@ -154,20 +154,43 @@ var SF_LDATA = {"ajax_url":"https:\/\/cd4dc.center.uchicago.edu\/wp-admin\/admin
   <!-- ===== ANDREA ===== -->
          <div class="entry-header">
   <h2>Chemical Structure Database</h2>
-  <p>Collected structures from computational project.</p>
+  <p>Collected structures from computational projects.</p>
 
   <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px;">
     <!-- Sidebar: File browser -->
     <div style="flex: 1; min-width: 280px; max-width: 350px; border: 1px solid #ddd; padding: 15px; border-radius: 6px;">
-      <h3>Repository Browser</h3>
-      <div id="file-browser" style="max-height: 500px; overflow-y: auto; margin-top: 10px;">
-        <ul id="file-list"><li>Loading repository contents…</li></ul>
+      
+      <!-- Navigation bar -->
+      <div style="display: flex; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+        <button id="back-btn" onclick="navigateBack()" style="padding: 6px 12px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 14px;" disabled>
+          Back
+        </button>
+        <button onclick="navigateToRoot()" style="padding: 6px 12px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 14px;">
+          🏠
+        </button>
+      </div>
+      
+      <!-- Current path display -->
+      <div id="current-path" style="font-size: 12px; color: #666; margin-bottom: 10px; padding: 6px; background: #f9f9f9; border-radius: 3px; word-break: break-all;">
+        /
+      </div>
+      
+      <div id="file-browser" style="max-height: 450px; overflow-y: auto; margin-top: 10px;">
+        <ul id="file-list" style="padding-left: 0;"><li>Loading repository contents...</li></ul>
       </div>
     </div>
-
+    
     <!-- Main: Viewer + metadata -->
     <div style="flex: 2; min-width: 300px;">
-      <div id="mol-container" style="width: 100%; height: 450px; border: 1px solid #ccc; border-radius: 4px;"></div>
+      <div id="mol-container" style="width: 100%; height: 450px; border: 1px solid #ccc; border-radius: 4px; position: relative; overflow: hidden;"></div>
+      
+      <!-- Download button -->
+      <div id="download-section" style="margin-top: 10px; display: none;">
+        <button id="download-btn" onclick="downloadCurrentMolecule()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          ⬇️ Download Structure
+        </button>
+      </div>
+      
       <div id="metadata" style="margin-top: 15px; padding: 12px; background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; display: none;">
         <!-- Metadata will appear here -->
       </div>
@@ -183,6 +206,10 @@ const GITHUB_REPO = "CD4DC_DB";
 const GITHUB_BRANCH = "main";
 
 let jmolApplet;
+let currentPath = '';
+let pathHistory = [];
+let currentMoleculeUrl = '';
+let currentMoleculeFilename = '';
 
 function initJSmol() {
   const Info = {
@@ -199,8 +226,7 @@ function initJSmol() {
     addSelectionOptions: false,
     serverURL: "https://chemapps.stolaf.edu/jmol/jsmol/php/jsmol.php"
   };
-
-  // Create applet directly in the container
+  
   Jmol.setDocument(0);
   jmolApplet = Jmol.getApplet("jmolApplet", Info);
   
@@ -212,73 +238,144 @@ function initJSmol() {
 function loadMolecule(url, filename) {
   const ext = filename.split('.').pop().toLowerCase();
   let script;
-
   if (ext === 'cif') {
     script = `load "${url}" {1 1 1}; set unitcell on;`;
   } else {
     script = `load "${url}";`;
   }
-
   Jmol.script(jmolApplet, `zap; ${script};`);
   
-  // Optional: show filename
-  document.getElementById('metadata').innerHTML = `<h4>Loaded: ${filename}</h4>`;
+  // Store current molecule info for download
+  currentMoleculeUrl = url;
+  currentMoleculeFilename = filename;
+  
+  // Show metadata and download button
+  document.getElementById('metadata').innerHTML = `<h5>Loaded: ${filename}</h5><p style="font-size: 12px; color: #666;">Path: ${currentPath}/${filename}</p>`;
   document.getElementById('metadata').style.display = 'block';
+  document.getElementById('download-section').style.display = 'block';
 }
 
-// GitHub file browser (same as before, but calls loadMolecule)
-async function loadGitHubPath(path) {
+// Download current molecule
+function downloadCurrentMolecule() {
+  if (!currentMoleculeUrl || !currentMoleculeFilename) {
+    alert('No molecule loaded!');
+    return;
+  }
+  
+  fetch(currentMoleculeUrl)
+    .then(response => response.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentMoleculeFilename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    })
+    .catch(error => {
+      console.error('Download error:', error);
+      alert('Failed to download file');
+    });
+}
+
+// GitHub file browser with navigation
+async function loadGitHubPath(path, addToHistory = true) {
   const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`;
+  
   try {
     const response = await fetch(apiUrl);
     if (!response.ok) throw new Error(`GitHub API: ${response.status}`);
     const items = await response.json();
-
+    
+    // Update current path
+    if (addToHistory && currentPath !== path) {
+      pathHistory.push(currentPath);
+    }
+    currentPath = path;
+    
+    // Update UI
+    updatePathDisplay();
+    updateBackButton();
+    
     const listEl = document.getElementById('file-list');
     listEl.innerHTML = '';
-
+    
     items.sort((a, b) => (a.type === 'dir' ? -1 : 1) - (b.type === 'dir' ? -1 : 1) || a.name.localeCompare(b.name));
-
+    
     items.forEach(item => {
       const li = document.createElement('li');
       li.style.listStyle = 'none';
-      li.style.padding = '4px 0';
-
+      li.style.padding = '6px 0';
+      li.style.borderBottom = '1px solid #f0f0f0';
+      
       if (item.type === 'dir') {
-        li.innerHTML = `<strong>📁 ${item.name}/</strong> 
-          <button onclick="loadGitHubPath('${item.path}')" style="font-size:12px; margin-left:8px;">Open</button>`;
+        li.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-weight: 500;">📁 ${item.name}/</span>
+            <button onclick="loadGitHubPath('${item.path}')" style="padding: 4px 10px; font-size: 12px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 3px; cursor: pointer;">
+              Open
+            </button>
+          </div>`;
       } else if (item.name.match(/\.(pdb|mol|sdf|mol2|cif|xyz)$/i)) {
         const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodeURIComponent(item.path)}`;
-        li.innerHTML = `<a href="#" onclick="loadMolecule('${rawUrl}', '${item.name}'); return false;">${item.name}</a>`;
+        li.innerHTML = `<a href="#" onclick="loadMolecule('${rawUrl}', '${item.name}'); return false;" style="color: #1976d2; text-decoration: none;">${item.name}</a>`;
       } else {
-        li.textContent = `📄 ${item.name}`;
-        li.style.color = '#888';
+        li.innerHTML = `<span style="color: #999;">📄 ${item.name}</span>`;
       }
-
+      
       listEl.appendChild(li);
     });
   } catch (error) {
     console.error('GitHub error:', error);
-    document.getElementById('file-list').innerHTML = `<li style="color:red">Error: ${error.message}</li>`;
+    document.getElementById('file-list').innerHTML = `<li style="color:red; list-style: none;">Error: ${error.message}</li>`;
   }
+}
+
+function updatePathDisplay() {
+  const pathDisplay = document.getElementById('current-path');
+  pathDisplay.textContent = currentPath || '/';
+}
+
+function updateBackButton() {
+  const backBtn = document.getElementById('back-btn');
+  backBtn.disabled = pathHistory.length === 0;
+  backBtn.style.opacity = pathHistory.length === 0 ? '0.5' : '1';
+  backBtn.style.cursor = pathHistory.length === 0 ? 'not-allowed' : 'pointer';
+}
+
+function navigateBack() {
+  if (pathHistory.length > 0) {
+    const previousPath = pathHistory.pop();
+    loadGitHubPath(previousPath, false);
+  }
+}
+
+function navigateToRoot() {
+  pathHistory = [];
+  loadGitHubPath('', false);
 }
 
 function loadRepositoryRoot() {
   loadGitHubPath('');
 }
 
-// Initialize on load <----- removed domcontent loader
+// Initialize on load
 window.addEventListener('load', function() {
   initJSmol();
-  setTimeout(loadRepositoryRoot, 1000); // Give JSmol time to fully initialize
+  setTimeout(loadRepositoryRoot, 1000);
 });
 
 // Expose for onclick
 window.loadGitHubPath = loadGitHubPath;
 window.loadMolecule = loadMolecule;
+window.navigateBack = navigateBack;
+window.navigateToRoot = navigateToRoot;
+window.downloadCurrentMolecule = downloadCurrentMolecule;
 </script>
 
-<!-- END -->
+<!--========================================================================================================= END -->
 
 		</div><!-- /#post-5 -->
 			</div><!-- /.col -->
