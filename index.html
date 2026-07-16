@@ -117,6 +117,118 @@
       padding: 32px;
       text-align: center;
     }
+
+    /* ----- Picture + social icons around it ----- */
+    .picture-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 60%;
+      max-width: 280px;
+      margin: 16px auto;
+    }
+
+    .profile-pic {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .social-icon {
+      position: absolute;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+      border: 3px solid #ffffff;
+      z-index: 2;
+    }
+
+    .social-icon:hover {
+      background: #444;
+      transform: translate(-50%, -50%) scale(1.12);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+    }
+
+    .social-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+
+    /* Position each icon along the right-side semicircle, half-overlapping the edge */
+    .social-icon.s1 { left: 93.3%; top: 25%;  }   /* top-right (~60°) */
+    .social-icon.s2 { left: 100%;  top: 50%;  }   /* right    (   0°) */
+    .social-icon.s3 { left: 93.3%; top: 75%;  }   /* bottom-right (-60°) */
+
+    /* ----- Maroon "go to publications" button ----- */
+    .maroon-btn {
+      background-color: #800000;
+      border: none;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      transition: background-color 0.25s ease, transform 0.25s ease;
+    }
+
+    .maroon-btn:hover {
+      background-color: #a52a2a;
+      transform: translateY(-2px);
+    }
+
+    /* ----- Scroll-down indicator (bottom-right) ----- */
+    .scroll-indicator {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(76, 175, 80, 0.95);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      border: none;
+      animation: bounce 1.8s ease-in-out infinite;
+      transition: opacity 0.4s ease;
+      opacity: 1;
+    }
+
+    .scroll-indicator:hover {
+      background: rgba(60, 140, 64, 1);
+    }
+
+    .scroll-indicator svg {
+      width: 26px;
+      height: 26px;
+      fill: white;
+    }
+
+    .scroll-indicator.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
   </style>
 </head>
 
@@ -127,7 +239,21 @@
     <div class="half green-bg" style="height:700px">
       <div class="section">
         <h1>Andrea Darù, PhD</h1>
-        <img src="picture.jpg" class="circle" alt="Person" style="width:40%">
+        <div class="picture-wrapper">
+          <img src="picture.jpg" class="circle profile-pic" alt="Person">
+          <a href="https://www.linkedin.com/in/andreadaru/" target="_blank" rel="noopener noreferrer"
+             class="social-icon s1" title="LinkedIn" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24"><path d="M19 0h-14C2.239 0 0 2.239 0 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5V5c0-2.761-2.238-5-5-5zM8 19H5V8h3v11zM6.5 6.732c-.966 0-1.75-.79-1.75-1.764 0-.974.784-1.764 1.75-1.764s1.75.79 1.75 1.764c0 .974-.783 1.764-1.75 1.764zM20 19h-3v-5.604c0-3.368-4-3.113-4 0V19h-3V8h3v1.765c1.396-2.586 7-2.777 7 2.476V19z"/></svg>
+          </a>
+          <a href="https://scholar.google.com/citations?user=ynCCYS4AAAAJ" target="_blank" rel="noopener noreferrer"
+             class="social-icon s2" title="Google Scholar" aria-label="Google Scholar">
+            <svg viewBox="0 0 24 24"><path d="M5.242 13.769L0.5 9.5 12 1l11.5 8.5-4.742 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/></svg>
+          </a>
+          <a href="https://orcid.org/0000-0002-0825-2101" target="_blank" rel="noopener noreferrer"
+             class="social-icon s3" title="ORCiD" aria-label="ORCiD">
+            <svg viewBox="0 0 24 24"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.369 4.378c.525 0 .947.431.947.947 0 .525-.422.947-.947.947-.525 0-.946-.422-.946-.947 0-.516.421-.947.946-.947zm-.722 3.038h1.444v10.041H6.647V7.416zm3.562 0h3.9c3.712 0 5.344 2.653 5.344 5.025 0 2.578-2.016 5.025-5.325 5.025h-3.919V7.416zm1.444 1.303v7.444h2.297c3.272 0 4.022-2.484 4.022-3.722 0-2.016-1.284-3.722-4.097-3.722h-2.222z"/></svg>
+          </a>
+        </div>
         <div class="section">
           <p>Currently postdoc at the University of Chicago,<br>
             previously postdoc associate at Scripps Research in San Diego</p>
@@ -149,24 +275,19 @@
 <br> </br>
         <h2>MOF/COF synthesis and feature ChatBot</h2>
         <a href="https://www.darumofspace.xyz/" target="_blank" class="button">Click here!</a>
+<br> </br>
+        <h2>See my publications</h2>
+        <a href="#publications" class="maroon-btn">Jump to publications &#8595;</a>
 </div>
 </div>
-
-  <!-- Social Links -->
-  <div>
-    Socials:
-    <a href="https://www.linkedin.com/in/andreadaru/" target="_blank" class="link-button">LinkedIn</a>
-    <a href="https://scholar.google.com/citations?user=ynCCYS4AAAAJ" target="_blank" class="link-button">Scholar</a>
-    <a href="https://orcid.org/0000-0002-0825-2101" target="_blank" class="link-button">ORCiD</a>
-  </div>
 
   <!-- Publications -->
   <div class="contact-section" id="publications">
     <h1>Publications</h1>
 
-<p><a href="https://doi.org/10.26434/chemrxiv.15003500/v1" target="_blank" rel="noopener noreferrer" style="color:black;">
+<p><a href="https://doi.org/10.26434/chemrxiv.15003500/v2" target="_blank" rel="noopener noreferrer" style="color:black;">
 <strong>Darù, A.*</strong>; Ling, J.; Wang. X.; Farha, O. K.; Delferro, M.*; Anderson, J. S.*; Gagliardi, L.* A End-to-end discovery of MOFs for ambient CH4 adsorption.
-<h style="color:green;"><i>ChemRxiv</i> <strong>2026</strong>.</a></h></p>
+<h style="color:green;"><i>J. Am. Chem. Soc. </i> <strong>2026</strong>.</a></h></p>
     
 <p><a href="https://onlinelibrary.wiley.com/doi/10.1002/smll.73636" target="_blank" rel="noopener noreferrer" style="color:black;">
 Tittel, J.; Knechtel, F.; Zaremba, O.; <strong>Darù, A.</strong>; Andreo, J.; Gagliardi, L.; Wuttke, S.; Ploetz, E.* Unraveling Water Sorption in Single-Crystal MOFs: Insights from Spectroscopy and Modeling on the Role of Structure, Composition, and Guest Molecules. 
@@ -268,6 +389,33 @@ Kurandina, D.; Huang, B.; Xu, W.; Hanikel, N.; <strong>Darù, A.</strong>; Stros
   Matute, R.; García-Viñuales, S.; Hayes, H.; Ghirardello, M.; <strong>Darù, A.</strong>; Tejero, T.; Delso, I.; Merino, P.* Recent Advances in the Preparation of Enantiomerically Pure Hydroxylamines from Nitrones. <h style="color:green;"><i>Curr. Org. Synth.</i> <strong>2016</strong>, 13, 669-686.</a></h></p>
 
   </div>
+
+  <!-- Scroll-down indicator (bottom right) -->
+  <button id="scroll-indicator" class="scroll-indicator" aria-label="Scroll down" title="Scroll down">
+    <svg viewBox="0 0 24 24"><path d="M12 16.5l-7-7 1.41-1.41L12 13.67l5.59-5.58L19 9.5l-7 7z"/></svg>
+  </button>
+
+  <script>
+    (function () {
+      var indicator = document.getElementById('scroll-indicator');
+      if (!indicator) return;
+
+      // Scroll one viewport down when clicked
+      indicator.addEventListener('click', function () {
+        window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
+      });
+
+      // Hide the indicator when the user is near the bottom of the page
+      function updateIndicator() {
+        var scrolled = window.scrollY + window.innerHeight;
+        var nearBottom = scrolled >= document.documentElement.scrollHeight - 80;
+        indicator.classList.toggle('hidden', nearBottom);
+      }
+      window.addEventListener('scroll', updateIndicator, { passive: true });
+      window.addEventListener('resize', updateIndicator);
+      updateIndicator();
+    })();
+  </script>
 
 </body>
 </html>
